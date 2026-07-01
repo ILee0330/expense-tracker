@@ -97,7 +97,17 @@ if st.session_state.user is None:
                 st.rerun()
             else:
                 st.error("Invalid login")
+    with st.expander("Forgot Password?"):
+        reset_user = st.text_input("Username")
+        new_password = st.text_input("New Password", type="password")
 
+        if st.button("Reset Password"):
+            c.execute(
+                "UPDATE users SET password=? WHERE username=?",
+                (hash_password(new_password), reset_user)
+            )
+        conn.commit()
+        st.success("Password updated (if username exists)")
     st.stop()
 
 # =========================
