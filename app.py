@@ -148,7 +148,7 @@ elif menu == 'View Summary':
 
             fig, ax = plt.subplots()
             ax.set_facecolor('none')
-            ax.pie(monthly, labels=monthly.index, autopct='%1.1f%%', startangle=90, textprops={'color': 'white'}
+            ax.pie(monthly, labels=monthly.index, autopct='%1.1f%%', startangle=90, textprops={'color': 'white'})
             ax.set_title("By Month")
 
             st.pyplot(fig)
