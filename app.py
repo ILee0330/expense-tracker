@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Personal Expense Tracker", layout="centered")
 st.title("💰 Personal Expense Tracker")
@@ -72,6 +73,7 @@ elif menu == 'View Expense':
         st.divider()
 
         overall_total = st.session_state.df['Amount'].sum()
+
         st.metric(
             label="Overall Total Spent",
             value=f"${overall_total:,.2f}"
@@ -96,17 +98,95 @@ elif menu == 'View Expense':
 
         st.dataframe(category_totals, hide_index=True)
 
+        st.divider()
+
+        st.subheader("Total by Month")
+
+        monthly_df = st.session_state.df.copy()
+        monthly_df['Date'] = pd.to_datetime(monthly_df['Date'])
+
+        monthly_totals = (
+            monthly_df
+            .groupby(monthly_df['Date'].dt.strftime('%B %Y'))['Amount']
+            .sum()
+            .reset_index()
+        )
+
+        monthly_totals.columns = ['Month', 'Total Spent']
+
+        monthly_totals['Total Spent'] = monthly_totals[
+            'Total Spent'
+        ].apply(lambda x: f"${x:,.2f}")
+
+        st.dataframe(monthly_totals, hide_index=True)
+
 # ---- View Summary ----
 elif menu == 'View Summary':
-    st.header("Summary by Category")
+    st.header("Summary")
 
     if st.session_state.df.empty:
         st.info("No expenses recorded yet.")
     else:
-        summary = st.session_state.df.groupby('Category')['Amount'].sum()
 
-        st.bar_chart(summary)
-        st.dataframe(summary)
+        chart_type = st.selectbox(
+            "Choose Summary Type",
+            ["Category Breakdown", "Monthly Breakdown"]
+        )
+
+        if chart_type == "Category Breakdown":
+
+            summary = (
+                st.session_state.df
+                .groupby('Category')['Amount']
+                .sum()
+            )
+
+            fig, ax = plt.subplots()
+
+            ax.pie(
+                summary,
+                labels=summary.index,
+                autopct='%1.1f%%',
+                startangle=90
+            )
+
+            ax.axis('equal')
+            ax.set_title("Expense Distribution by Category")
+
+            st.pyplot(fig)
+
+            st.subheader("Category Totals")
+            st.dataframe(summary)
+
+        else:
+
+            monthly_df = st.session_state.df.copy()
+            monthly_df['Date'] = pd.to_datetime(monthly_df['Date'])
+
+            monthly_summary = (
+                monthly_df
+                .groupby(
+                    monthly_df['Date'].dt.strftime('%B %Y')
+                )['Amount']
+                .sum()
+            )
+
+            fig, ax = plt.subplots()
+
+            ax.pie(
+                monthly_summary,
+                labels=monthly_summary.index,
+                autopct='%1.1f%%',
+                startangle=90
+            )
+
+            ax.axis('equal')
+            ax.set_title("Expense Distribution by Month")
+
+            st.pyplot(fig)
+
+            st.subheader("Monthly Totals")
+            st.dataframe(monthly_summary)
 
 # ---- Edit Expense ----
 elif menu == 'Edit Expense':
