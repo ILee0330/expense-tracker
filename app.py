@@ -254,7 +254,6 @@ elif menu == "Edit Expense":
         st.info("No expenses to edit.")
 
     else:
-        else:
         options = {
             f"{row['date']} | {row['category']} | ${row['amount']}": row['id']
             for _, row in df.iterrows()
