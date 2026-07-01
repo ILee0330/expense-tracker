@@ -220,7 +220,18 @@ elif menu == "Add Expense":
 
     with st.form("form", clear_on_submit=True):
         date = st.date_input("Date")
-        cat = st.text_input("Category")
+        categories = [
+        "Food",
+        "Transport",
+        "Rent",
+        "Entertainment",
+        "Utilities",
+        "Shopping",
+        "Health",
+        "Other"
+    ]
+
+        cat = st.selectbox("Category", categories)
         desc = st.text_input("Description")
         amt = st.text_input("Amount")
 
