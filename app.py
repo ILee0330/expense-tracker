@@ -73,8 +73,8 @@ if menu == 'Add Expense':
 
     with st.form("expense_form", clear_on_submit=True):
         date = st.date_input("Date")
-        category = st.text_input("Category")
-        description = st.text_input("Description")
+        category = st.text_input("Category", placeholder="Food, Gas, Entertainment, etc")
+        description = st.text_input("Description", placeholder="Food with friends")
         amount_input = st.text_input("Amount")
 
         submitted = st.form_submit_button("Submit")
