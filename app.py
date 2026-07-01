@@ -34,18 +34,24 @@ if menu == 'Add Expense':
         submitted = st.form_submit_button("Submit")
 
         if submitted:
-            if category.strip() == "":
-                st.error("Please enter a category.")
-            else:
-                new_row = {
-                    'Date': str(date),
-                    'Category': category,
-                    'Description': description,
-                    'Amount': amount
-                }
+    try:
+        amount = float(amount_input)
 
-                st.session_state.df.loc[len(st.session_state.df)] = new_row
-                st.success("Expense added!")
+        if category.strip() == "":
+            st.error("Please enter a category.")
+        else:
+            new_row = {
+                'Date': str(date),
+                'Category': category,
+                'Description': description,
+                'Amount': amount
+            }
+
+            st.session_state.df.loc[len(st.session_state.df)] = new_row
+            st.success("Expense added!")
+
+    except ValueError:
+        st.error("Please enter a valid number for Amount.")
 
 # ---- View Expense ----
 elif menu == 'View Expense':
