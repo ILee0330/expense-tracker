@@ -22,7 +22,7 @@ if menu == 'Add Expense':
     st.header("Add Expense")
 
     with st.form("expense_form", clear_on_submit=True):
-        date = st.date_input("Datsub
+        date = st.date_input("Date")
 
         category = st.text_input(
             "Category",
@@ -73,11 +73,7 @@ elif menu == 'View Expense':
         st.divider()
 
         overall_total = st.session_state.df['Amount'].sum()
-
-        st.metric(
-            label="Overall Total Spent",
-            value=f"${overall_total:,.2f}"
-        )
+        st.metric("Overall Total Spent", f"${overall_total:,.2f}")
 
         st.divider()
 
@@ -87,16 +83,9 @@ elif menu == 'View Expense':
             st.session_state.df
             .groupby('Category')['Amount']
             .sum()
-            .reset_index()
         )
 
-        category_totals.columns = ['Category', 'Total Spent']
-
-        category_totals['Total Spent'] = category_totals[
-            'Total Spent'
-        ].apply(lambda x: f"${x:,.2f}")
-
-        st.dataframe(category_totals, hide_index=True)
+        st.dataframe(category_totals)
 
         st.divider()
 
@@ -109,16 +98,9 @@ elif menu == 'View Expense':
             monthly_df
             .groupby(monthly_df['Date'].dt.strftime('%B %Y'))['Amount']
             .sum()
-            .reset_index()
         )
 
-        monthly_totals.columns = ['Month', 'Total Spent']
-
-        monthly_totals['Total Spent'] = monthly_totals[
-            'Total Spent'
-        ].apply(lambda x: f"${x:,.2f}")
-
-        st.dataframe(monthly_totals, hide_index=True)
+        st.dataframe(monthly_totals)
 
 # ---- View Summary ----
 elif menu == 'View Summary':
@@ -133,31 +115,31 @@ elif menu == 'View Summary':
             ["Category Breakdown", "Monthly Breakdown"]
         )
 
+        # ---------------- CATEGORY PIE ----------------
         if chart_type == "Category Breakdown":
 
-            summary = (
-                st.session_state.df
-                .groupby('Category')['Amount']
-                .sum()
-            )
+            summary = st.session_state.df.groupby('Category')['Amount'].sum()
 
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(facecolor='#0E1117')
+            ax.set_facecolor('#0E1117')
 
             ax.pie(
                 summary,
                 labels=summary.index,
                 autopct='%1.1f%%',
-                startangle=90
+                startangle=90,
+                textprops={'color': 'white'}
             )
 
             ax.axis('equal')
-            ax.set_title("Expense Distribution by Category")
+            ax.set_title("Expense by Category", color='white')
 
             st.pyplot(fig)
 
             st.subheader("Category Totals")
             st.dataframe(summary)
 
+        # ---------------- MONTHLY PIE ----------------
         else:
 
             monthly_df = st.session_state.df.copy()
@@ -165,24 +147,23 @@ elif menu == 'View Summary':
 
             monthly_summary = (
                 monthly_df
-                .groupby(
-                    monthly_df['Date'].dt.strftime('%B %Y')
-                )['Amount']
+                .groupby(monthly_df['Date'].dt.strftime('%B %Y'))['Amount']
                 .sum()
             )
 
-            fig, ax = plt.subplots(facecolor='none')
-            ax.set_facecolor('none')
+            fig, ax = plt.subplots(facecolor='#0E1117')
+            ax.set_facecolor('#0E1117')
 
             ax.pie(
                 monthly_summary,
                 labels=monthly_summary.index,
                 autopct='%1.1f%%',
-                startangle=90
+                startangle=90,
+                textprops={'color': 'white'}
             )
 
             ax.axis('equal')
-            ax.set_title("Expense Distribution by Month")
+            ax.set_title("Expense by Month", color='white')
 
             st.pyplot(fig)
 
@@ -201,33 +182,15 @@ elif menu == 'Edit Expense':
             for idx, row in st.session_state.df.iterrows()
         ]
 
-        selected = st.selectbox(
-            "Select expense to edit",
-            options
-        )
+        selected = st.selectbox("Select expense to edit", options)
 
         idx_to_edit = int(selected.split(":")[0])
         row = st.session_state.df.loc[idx_to_edit]
 
-        new_date = st.text_input(
-            "Date",
-            value=str(row['Date'])
-        )
-
-        new_category = st.text_input(
-            "Category",
-            value=str(row['Category'])
-        )
-
-        new_description = st.text_input(
-            "Description",
-            value=str(row['Description'])
-        )
-
-        new_amount_input = st.text_input(
-            "Amount",
-            value=str(row['Amount'])
-        )
+        new_date = st.text_input("Date", value=str(row['Date']))
+        new_category = st.text_input("Category", value=str(row['Category']))
+        new_description = st.text_input("Description", value=str(row['Description']))
+        new_amount_input = st.text_input("Amount", value=str(row['Amount']))
 
         if st.button("Save Changes"):
             try:
@@ -255,10 +218,7 @@ elif menu == 'Delete Expense':
             for idx, row in st.session_state.df.iterrows()
         ]
 
-        selected = st.selectbox(
-            "Select expense to delete",
-            options
-        )
+        selected = st.selectbox("Select expense to delete", options)
 
         if st.button("Delete"):
             idx_to_remove = int(selected.split(":")[0])
