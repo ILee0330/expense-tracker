@@ -60,11 +60,96 @@ df = load_data()
 # SIDEBAR MENU
 # =========================
 menu = st.sidebar.radio(
-    "Action",
-    ['Add Expense', 'View Expense', 'View Summary', 'Edit Expense', 'Delete Expense']
+    "Navigation",
+    ['Dashboard', 'Add Expense', 'View Expense', 'Edit Expense', 'Delete Expense']
 )
 
+elif menu == "Dashboard":
 
+    st.header("📊 Financial Dashboard")
+
+    if st.session_state.df.empty:
+        st.info("No expenses recorded yet.")
+    else:
+
+        overall_total = st.session_state.df['Amount'].sum()
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("💰 Total Expenses", f"${overall_total:,.2f}")
+
+        with col2:
+            st.metric("🧾 Transactions", len(st.session_state.df))
+
+        with col3:
+            avg = overall_total / len(st.session_state.df)
+            st.metric("📈 Avg Expense", f"${avg:,.2f}")
+
+        st.divider()
+
+        left, right = st.columns(2)
+
+        # ---- CATEGORY PIE ----
+        with left:
+
+            st.subheader("By Category")
+
+            category_summary = (
+                st.session_state.df
+                .groupby('Category')['Amount']
+                .sum()
+            )
+
+            fig, ax = plt.subplots(facecolor='#0E1117')
+            ax.set_facecolor('#0E1117')
+
+            ax.pie(
+                category_summary,
+                labels=category_summary.index,
+                autopct='%1.1f%%',
+                startangle=90,
+                textprops={'color': 'white'}
+            )
+
+            ax.set_title("Categories", color="white")
+
+            st.pyplot(fig)
+
+        # ---- MONTHLY PIE ----
+        with right:
+
+            st.subheader("By Month")
+
+            monthly_df = st.session_state.df.copy()
+            monthly_df['Date'] = pd.to_datetime(monthly_df['Date'])
+
+            monthly_summary = (
+                monthly_df
+                .groupby(monthly_df['Date'].dt.strftime('%B %Y'))['Amount']
+                .sum()
+            )
+
+            fig, ax = plt.subplots(facecolor='#0E1117')
+            ax.set_facecolor('#0E1117')
+
+            ax.pie(
+                monthly_summary,
+                labels=monthly_summary.index,
+                autopct='%1.1f%%',
+                startangle=90,
+                textprops={'color': 'white'}
+            )
+
+            ax.set_title("Monthly Spending", color="white")
+
+            st.pyplot(fig)
+
+        st.divider()
+
+        st.subheader("Recent Transactions")
+        st.dataframe(st.session_state.df.tail(10), use_container_width=True)
+        
 # =========================
 # ADD EXPENSE
 # =========================
@@ -120,7 +205,6 @@ elif menu == 'View Expense':
 # =========================
 # SUMMARY
 # =========================
-elif menu == 'View Summary':
     st.header("Summary")
 
     df = load_data()
