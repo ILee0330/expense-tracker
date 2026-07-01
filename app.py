@@ -35,8 +35,12 @@ CREATE TABLE IF NOT EXISTS expenses (
 """)
 
 conn.commit()
-c.execute("PRAGMA table_info(expenses)")
-st.write(c.fetchall())
+# Add user_id column if database was created before login system
+try:
+    c.execute("ALTER TABLE expenses ADD COLUMN user_id INTEGER")
+    conn.commit()
+except:
+    pass
 
 # =========================
 # SESSION STATE
@@ -112,11 +116,17 @@ st.title("💰 Personal Expense Tracker")
 # HELPER FUNCTIONS
 # =========================
 def load_data():
-    return pd.read_sql_query(
-        "SELECT * FROM expenses WHERE user_id=?",
-        conn,
-        params=(st.session_state.user_id,)
-    )
+    try:
+        return pd.read_sql_query(
+            "SELECT * FROM expenses WHERE user_id=?",
+            conn,
+            params=(st.session_state.user_id,)
+        )
+    except:
+        return pd.read_sql_query(
+            "SELECT * FROM expenses",
+            conn
+        )
 
 def add_expense(date, category, description, amount):
     c.execute(
@@ -226,7 +236,12 @@ elif menu == "Add Expense":
 # =========================
 elif menu == "View Expense":
     st.header("View Expenses")
-    st.dataframe(df.drop(columns=["id", "user_id"]))
+    st.dataframe(
+    df.drop(
+        columns=["id", "user_id"],
+        errors="ignore"
+    )
+)
 
 # =========================
 # EDIT (FIXED)
