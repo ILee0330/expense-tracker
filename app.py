@@ -283,13 +283,13 @@ elif menu == "Delete Expense":
     st.header("Delete Expense")
 
     if df.empty:
-    st.info("No expenses to edit.")
-else:
-    options = [
-        f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}"
-        for _, row in df.iterrows()
-    ]
+        st.info("No expenses to edit.")
+    else:
+        options = [
+            f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}"
+            for _, row in df.iterrows()
+        ]
 
-    selected = st.selectbox("Select Expense", options)
+        selected = st.selectbox("Select Expense", options)
 
     expense_id = int(selected.split("|")[0].strip())
