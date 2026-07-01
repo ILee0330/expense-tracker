@@ -64,15 +64,20 @@ menu = st.sidebar.radio(
     ['Dashboard', 'Add Expense', 'View Expense', 'Edit Expense', 'Delete Expense']
 )
 
-elif menu == "Dashboard":
+# =========================
+# DASHBOARD
+# =========================
+if menu == "Dashboard":
 
     st.header("📊 Financial Dashboard")
 
-    if st.session_state.df.empty:
+    df = load_data()
+
+    if df.empty:
         st.info("No expenses recorded yet.")
     else:
 
-        overall_total = st.session_state.df['Amount'].sum()
+        overall_total = df['amount'].sum()
 
         col1, col2, col3 = st.columns(3)
 
@@ -80,26 +85,19 @@ elif menu == "Dashboard":
             st.metric("💰 Total Expenses", f"${overall_total:,.2f}")
 
         with col2:
-            st.metric("🧾 Transactions", len(st.session_state.df))
+            st.metric("🧾 Transactions", len(df))
 
         with col3:
-            avg = overall_total / len(st.session_state.df)
+            avg = overall_total / len(df)
             st.metric("📈 Avg Expense", f"${avg:,.2f}")
 
         st.divider()
 
         left, right = st.columns(2)
 
-        # ---- CATEGORY PIE ----
+        # CATEGORY PIE
         with left:
-
-            st.subheader("By Category")
-
-            category_summary = (
-                st.session_state.df
-                .groupby('Category')['Amount']
-                .sum()
-            )
+            category_summary = df.groupby('category')['amount'].sum()
 
             fig, ax = plt.subplots(facecolor='#0E1117')
             ax.set_facecolor('#0E1117')
@@ -116,19 +114,11 @@ elif menu == "Dashboard":
 
             st.pyplot(fig)
 
-        # ---- MONTHLY PIE ----
+        # MONTHLY PIE
         with right:
+            df['date'] = pd.to_datetime(df['date'])
 
-            st.subheader("By Month")
-
-            monthly_df = st.session_state.df.copy()
-            monthly_df['Date'] = pd.to_datetime(monthly_df['Date'])
-
-            monthly_summary = (
-                monthly_df
-                .groupby(monthly_df['Date'].dt.strftime('%B %Y'))['Amount']
-                .sum()
-            )
+            monthly_summary = df.groupby(df['date'].dt.strftime('%B %Y'))['amount'].sum()
 
             fig, ax = plt.subplots(facecolor='#0E1117')
             ax.set_facecolor('#0E1117')
@@ -146,20 +136,20 @@ elif menu == "Dashboard":
             st.pyplot(fig)
 
         st.divider()
-
         st.subheader("Recent Transactions")
-        st.dataframe(st.session_state.df.tail(10), use_container_width=True)
-        
+        st.dataframe(df.tail(10))
+
+
 # =========================
 # ADD EXPENSE
 # =========================
-if menu == 'Add Expense':
+elif menu == "Add Expense":
     st.header("Add Expense")
 
     with st.form("expense_form", clear_on_submit=True):
         date = st.date_input("Date")
-        category = st.text_input("Category", placeholder="Food, Gas, Entertainment, etc")
-        description = st.text_input("Description", placeholder="Food with friends")
+        category = st.text_input("Category")
+        description = st.text_input("Description")
         amount_input = st.text_input("Amount")
 
         submitted = st.form_submit_button("Submit")
@@ -167,138 +157,68 @@ if menu == 'Add Expense':
         if submitted:
             try:
                 amount = float(amount_input)
-
-                if category.strip() == "":
-                    st.error("Category required.")
-                else:
-                    add_expense(str(date), category, description, amount)
-                    st.success("Expense added!")
-
-            except ValueError:
-                st.error("Invalid amount.")
+                add_expense(str(date), category, description, amount)
+                st.success("Expense added!")
+            except:
+                st.error("Invalid amount")
 
 
 # =========================
 # VIEW EXPENSES
 # =========================
-elif menu == 'View Expense':
+elif menu == "View Expense":
     st.header("View Expenses")
 
     df = load_data()
 
-    if df.empty:
-        st.info("No expenses yet.")
-    else:
-        st.dataframe(df.drop(columns=["id"]))
-
-        st.metric("Total Spent", f"${df['amount'].sum():,.2f}")
-
-        st.subheader("By Category")
-        st.dataframe(df.groupby("category")["amount"].sum())
-
-        st.subheader("By Month")
-        df['date'] = pd.to_datetime(df['date'])
-        monthly = df.groupby(df['date'].dt.strftime('%B %Y'))['amount'].sum()
-        st.dataframe(monthly)
-
-
-# =========================
-# SUMMARY
-# =========================
-    st.header("Summary")
-
-    df = load_data()
-
-    if df.empty:
-        st.info("No data.")
-    else:
-        choice = st.selectbox("View", ["Category", "Monthly"])
-
-        df['date'] = pd.to_datetime(df['date'])
-
-        if choice == "Category":
-            summary = df.groupby("category")["amount"].sum()
-
-            fig, ax = plt.subplots(facecolor='none')
-            ax.set_facecolor('none')
-            ax.pie(summary, labels=summary.index, autopct='%1.1f%%', startangle=90, textprops={'color': 'white'})
-            ax.set_title("By Category", color='white')
-
-            st.pyplot(fig)
-            st.dataframe(summary)
-
-        else:
-            monthly = df.groupby(df['date'].dt.strftime('%B %Y'))['amount'].sum()
-
-            fig, ax = plt.subplots(facecolor='none')
-            ax.set_facecolor('none')
-            ax.pie(monthly, labels=monthly.index, autopct='%1.1f%%', startangle=90, textprops={'color': 'white'})
-            ax.set_title("By Month", color='white')
-
-            st.pyplot(fig)
-            st.dataframe(monthly)
+    st.dataframe(df.drop(columns=["id"]))
 
 
 # =========================
 # EDIT EXPENSE
 # =========================
-elif menu == 'Edit Expense':
+elif menu == "Edit Expense":
     st.header("Edit Expense")
-
     df = load_data()
 
-    if df.empty:
-        st.info("No data.")
-    else:
-        options = df.apply(
-            lambda row: f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}",
-            axis=1
+    options = df.apply(
+        lambda row: f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}",
+        axis=1
+    )
+
+    selected = st.selectbox("Select", options)
+    expense_id = int(selected.split("|")[0])
+
+    row = df[df['id'] == expense_id].iloc[0]
+
+    if st.button("Save Changes"):
+        update_expense(
+            expense_id,
+            row['date'],
+            row['category'],
+            row['description'],
+            row['amount']
         )
-
-        selected = st.selectbox("Select", options)
-        expense_id = int(selected.split("|")[0].strip())
-
-        row = df[df['id'] == expense_id].iloc[0]
-
-        new_date = st.text_input("Date", row['date'])
-        new_category = st.text_input("Category", row['category'])
-        new_description = st.text_input("Description", row['description'])
-        new_amount = st.text_input("Amount", str(row['amount']))
-
-        if st.button("Save Changes"):
-            try:
-                update_expense(
-                    expense_id,
-                    new_date,
-                    new_category,
-                    new_description,
-                    float(new_amount)
-                )
-                st.success("Updated!")
-            except ValueError:
-                st.error("Invalid amount")
+        st.success("Updated!")
 
 
 # =========================
 # DELETE EXPENSE
 # =========================
-elif menu == 'Delete Expense':
+elif menu == "Delete Expense":
     st.header("Delete Expense")
 
     df = load_data()
 
-    if df.empty:
-        st.info("No data.")
-    else:
-        options = df.apply(
-            lambda row: f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}",
-            axis=1
-        )
+    options = df.apply(
+        lambda row: f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}",
+        axis=1
+    )
 
-        selected = st.selectbox("Select", options)
-        expense_id = int(selected.split("|")[0].strip())
+    selected = st.selectbox("Select", options)
+    expense_id = int(selected.split("|")[0])
 
-        if st.button("Delete"):
-            delete_expense(expense_id)
-            st.success("Deleted!")
-            st.rerun()
+    if st.button("Delete"):
+        delete_expense(expense_id)
+        st.success("Deleted!")
+        st.rerun()
