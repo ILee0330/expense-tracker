@@ -3,21 +3,52 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
 import hashlib
-# =========================
-# LOGIN SYSTEM
-# =========================
 
+# =========================
+# DATABASE SETUP (MUST BE FIRST)
+# =========================
+conn = sqlite3.connect("expenses.db", check_same_thread=False)
+c = conn.cursor()
+
+c.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT
+)
+""")
+
+c.execute("""
+CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    date TEXT,
+    category TEXT,
+    description TEXT,
+    amount REAL
+)
+""")
+
+conn.commit()
+
+
+# =========================
+# SESSION STATE
+# =========================
 if "user" not in st.session_state:
     st.session_state.user = None
+
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
 
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-# -------------------------
-# LOGIN SCREEN (BLOCK APP)
-# -------------------------
+# =========================
+# LOGIN SYSTEM
+# =========================
 if st.session_state.user is None:
 
     st.title("🔐 Login System")
@@ -47,45 +78,33 @@ if st.session_state.user is None:
 
         if st.button("Login"):
             c.execute(
-                "SELECT * FROM users WHERE username=? AND password=?",
+                "SELECT id, username FROM users WHERE username=? AND password=?",
                 (username, hash_password(password))
             )
 
             user = c.fetchone()
 
             if user:
-                st.session_state.user = username
+                st.session_state.user = user[1]
+                st.session_state.user_id = user[0]
                 st.success("Logged in!")
                 st.rerun()
             else:
                 st.error("Invalid login")
 
     st.stop()
+
+
 # =========================
-# DATABASE SETUP (FIXED ORDER)
+# LOGOUT
 # =========================
-conn = sqlite3.connect("expenses.db", check_same_thread=False)
-c = conn.cursor()
+st.sidebar.write(f"Logged in as: {st.session_state.user}")
 
-c.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT
-)
-""")
+if st.sidebar.button("Logout"):
+    st.session_state.user = None
+    st.session_state.user_id = None
+    st.rerun()
 
-c.execute("""
-CREATE TABLE IF NOT EXISTS expenses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date TEXT,
-    category TEXT,
-    description TEXT,
-    amount REAL
-)
-""")
-
-conn.commit()
 
 # =========================
 # APP UI
@@ -95,16 +114,20 @@ st.title("💰 Personal Expense Tracker")
 
 
 # =========================
-# HELPER FUNCTIONS
+# HELPER FUNCTIONS (USER-SPECIFIC)
 # =========================
 def load_data():
-    return pd.read_sql_query("SELECT * FROM expenses", conn)
+    return pd.read_sql_query(
+        "SELECT * FROM expenses WHERE user_id=?",
+        conn,
+        params=(st.session_state.user_id,)
+    )
 
 
 def add_expense(date, category, description, amount):
     c.execute(
-        "INSERT INTO expenses (date, category, description, amount) VALUES (?, ?, ?, ?)",
-        (date, category, description, amount)
+        "INSERT INTO expenses (user_id, date, category, description, amount) VALUES (?, ?, ?, ?, ?)",
+        (st.session_state.user_id, date, category, description, amount)
     )
     conn.commit()
 
@@ -113,13 +136,16 @@ def update_expense(expense_id, date, category, description, amount):
     c.execute("""
         UPDATE expenses
         SET date=?, category=?, description=?, amount=?
-        WHERE id=?
-    """, (date, category, description, amount, expense_id))
+        WHERE id=? AND user_id=?
+    """, (date, category, description, amount, expense_id, st.session_state.user_id))
     conn.commit()
 
 
 def delete_expense(expense_id):
-    c.execute("DELETE FROM expenses WHERE id=?", (expense_id,))
+    c.execute(
+        "DELETE FROM expenses WHERE id=? AND user_id=?",
+        (expense_id, st.session_state.user_id)
+    )
     conn.commit()
 
 
@@ -129,11 +155,11 @@ df = load_data()
 # =========================
 # SIDEBAR MENU
 # =========================
-
 menu = st.sidebar.radio(
     "Navigation",
     ['Dashboard', 'Add Expense', 'View Expense', 'Edit Expense', 'Delete Expense']
 )
+
 
 # =========================
 # DASHBOARD
@@ -215,6 +241,7 @@ if menu == "Dashboard":
 # ADD EXPENSE
 # =========================
 elif menu == "Add Expense":
+
     st.header("Add Expense")
 
     with st.form("expense_form", clear_on_submit=True):
@@ -238,18 +265,21 @@ elif menu == "Add Expense":
 # VIEW EXPENSES
 # =========================
 elif menu == "View Expense":
+
     st.header("View Expenses")
 
     df = load_data()
 
-    st.dataframe(df.drop(columns=["id"]))
+    st.dataframe(df.drop(columns=["id", "user_id"]))
 
 
 # =========================
 # EDIT EXPENSE
 # =========================
 elif menu == "Edit Expense":
+
     st.header("Edit Expense")
+
     df = load_data()
 
     options = df.apply(
@@ -277,6 +307,7 @@ elif menu == "Edit Expense":
 # DELETE EXPENSE
 # =========================
 elif menu == "Delete Expense":
+
     st.header("Delete Expense")
 
     df = load_data()
