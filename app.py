@@ -244,37 +244,40 @@ elif menu == "View Expense":
 )
 
 # =========================
-# EDIT (FIXED)
+# EDIT
 # =========================
 elif menu == "Edit Expense":
 
     st.header("Edit Expense")
 
-    options = df.apply(
-        lambda r: f"{r['id']} | {r['date']} | {r['category']} | ${r['amount']}",
-        axis=1
-    )
+    if df.empty:
+        st.info("No expenses to edit.")
 
-    selected = st.selectbox("Select", options)
-    expense_id = int(selected.split("|")[0])
+    else:
+        expense_ids = df["id"].tolist()
 
-    row = df[df['id'] == expense_id].iloc[0]
-
-    new_date = st.text_input("Date", row['date'])
-    new_cat = st.text_input("Category", row['category'])
-    new_desc = st.text_input("Description", row['description'])
-    new_amt = st.text_input("Amount", str(row['amount']))
-
-    if st.button("Save Changes"):
-        update_expense(
-            expense_id,
-            new_date,
-            new_cat,
-            new_desc,
-            float(new_amt)
+        expense_id = st.selectbox(
+            "Select Expense",
+            expense_ids
         )
-        st.success("Updated!")
 
+        row = df[df["id"] == expense_id].iloc[0]
+
+        new_date = st.text_input("Date", str(row["date"]))
+        new_cat = st.text_input("Category", row["category"])
+        new_desc = st.text_input("Description", row["description"])
+        new_amt = st.text_input("Amount", str(row["amount"]))
+
+        if st.button("Save Changes"):
+            update_expense(
+                expense_id,
+                new_date,
+                new_cat,
+                new_desc,
+                float(new_amt)
+            )
+            st.success("Updated!")
+            st.rerun()
 # =========================
 # DELETE
 # =========================
@@ -283,13 +286,17 @@ elif menu == "Delete Expense":
     st.header("Delete Expense")
 
     if df.empty:
-        st.info("No expenses to edit.")
+        st.info("No expenses to delete.")
+
     else:
-        options = [
-            f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}"
-            for _, row in df.iterrows()
-        ]
+        expense_ids = df["id"].tolist()
 
-        selected = st.selectbox("Select Expense", options)
+        expense_id = st.selectbox(
+            "Select Expense",
+            expense_ids
+        )
 
-    expense_id = int(selected.split("|")[0].strip())
+        if st.button("Delete"):
+            delete_expense(expense_id)
+            st.success("Deleted!")
+            st.rerun()
