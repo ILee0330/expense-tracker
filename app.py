@@ -33,7 +33,7 @@ if menu == 'Add Expense':
 
         submitted = st.form_submit_button("Submit")
 
-        if submitted:
+if submitted:
     try:
         amount = float(amount_input)
 
