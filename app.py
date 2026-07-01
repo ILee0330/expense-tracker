@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS expenses (
 """)
 
 conn.commit()
+c.execute("PRAGMA table_info(expenses)")
+st.write(c.fetchall())
 
 # =========================
 # SESSION STATE
