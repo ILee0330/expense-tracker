@@ -267,7 +267,7 @@ selected = st.selectbox(
 expense_id = options[selected]
     
 
-        row = df[df["id"] == expense_id].iloc[0]
+    row = df[df["id"] == expense_id].iloc[0]
 
         new_date = st.text_input("Date", str(row["date"]))
         new_cat = st.text_input("Category", row["category"])
