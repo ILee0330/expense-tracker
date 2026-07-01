@@ -22,7 +22,7 @@ if menu == 'Add Expense':
     st.header("Add Expense")
 
     with st.form("expense_form", clear_on_submit=True):
-        date = st.date_input("Date")
+        date = st.date_input("Datsub
 
         category = st.text_input(
             "Category",
@@ -171,7 +171,8 @@ elif menu == 'View Summary':
                 .sum()
             )
 
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(facecolor='none')
+            ax.set_facecolor('none')
 
             ax.pie(
                 monthly_summary,
