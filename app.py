@@ -22,36 +22,43 @@ if menu == 'Add Expense':
 
     with st.form("expense_form", clear_on_submit=True):
         date = st.date_input("Date")
+
         category = st.text_input(
             "Category",
-            placeholder="Food, Gas, Entertainment, ect")
+            placeholder="Food, Gas, Entertainment, etc."
+        )
+
         description = st.text_input(
             "Description",
             placeholder="e.g. Food with friends"
         )
-        amount_input = st.text_input("Amount", placeholder="e.g. 12.50")
+
+        amount_input = st.text_input(
+            "Amount",
+            placeholder="e.g. 12.50"
+        )
 
         submitted = st.form_submit_button("Submit")
 
-if submitted:
-    try:
-        amount = float(amount_input)
+        if submitted:
+            try:
+                amount = float(amount_input)
 
-        if category.strip() == "":
-            st.error("Please enter a category.")
-        else:
-            new_row = {
-                'Date': str(date),
-                'Category': category,
-                'Description': description,
-                'Amount': amount
-            }
+                if category.strip() == "":
+                    st.error("Please enter a category.")
+                else:
+                    new_row = {
+                        'Date': str(date),
+                        'Category': category,
+                        'Description': description,
+                        'Amount': amount
+                    }
 
-            st.session_state.df.loc[len(st.session_state.df)] = new_row
-            st.success("Expense added!")
+                    st.session_state.df.loc[len(st.session_state.df)] = new_row
+                    st.success("Expense added!")
 
-    except ValueError:
-        st.error("Please enter a valid number for Amount.")
+            except ValueError:
+                st.error("Please enter a valid number for Amount.")
 
 # ---- View Expense ----
 elif menu == 'View Expense':
@@ -136,21 +143,24 @@ elif menu == 'Edit Expense':
             value=str(row['Description'])
         )
 
-        new_amount = st.number_input(
+        new_amount_input = st.text_input(
             "Amount",
-            min_value=0.00,
-            value=float(row['Amount']),
-            step=0.01,
-            format="%.2f"
+            value=str(row['Amount'])
         )
 
         if st.button("Save Changes"):
-            st.session_state.df.loc[idx_to_edit, 'Date'] = new_date
-            st.session_state.df.loc[idx_to_edit, 'Category'] = new_category
-            st.session_state.df.loc[idx_to_edit, 'Description'] = new_description
-            st.session_state.df.loc[idx_to_edit, 'Amount'] = new_amount
+            try:
+                new_amount = float(new_amount_input)
 
-            st.success("Expense updated!")
+                st.session_state.df.loc[idx_to_edit, 'Date'] = new_date
+                st.session_state.df.loc[idx_to_edit, 'Category'] = new_category
+                st.session_state.df.loc[idx_to_edit, 'Description'] = new_description
+                st.session_state.df.loc[idx_to_edit, 'Amount'] = new_amount
+
+                st.success("Expense updated!")
+
+            except ValueError:
+                st.error("Please enter a valid number for Amount.")
 
 # ---- Delete Expense ----
 elif menu == 'Delete Expense':
