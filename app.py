@@ -29,12 +29,7 @@ if menu == 'Add Expense':
             "Description",
             placeholder="e.g. Food with friends"
         )
-        amount = st.number_input(
-            "Amount",
-            min_value=0.00,
-            step=0.01,
-            format="%.2f"
-        )
+        amount_input = st.text_input("Amount", placeholder="e.g. 12.50")
 
         submitted = st.form_submit_button("Submit")
 
