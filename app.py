@@ -294,12 +294,17 @@ elif menu == "Delete Expense":
         st.info("No expenses to delete.")
 
     else:
-        expense_ids = df["id"].tolist()
+        options = {
+            f"{row['date']} | {row['category']} | ${row['amount']}": row['id']
+            for _, row in df.iterrows()
+        }
 
-        expense_id = st.selectbox(
+        selected = st.selectbox(
             "Select Expense",
-            expense_ids
+            list(options.keys())
         )
+
+        expense_id = options[selected]
 
         if st.button("Delete"):
             delete_expense(expense_id)
