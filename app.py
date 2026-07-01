@@ -135,7 +135,8 @@ elif menu == 'View Summary':
         if choice == "Category":
             summary = df.groupby("category")["amount"].sum()
 
-            fig, ax = plt.subplots()
+            fig, ax = plt.subplots(facecolor='none')
+            ax.set_facecolor('none')
             ax.pie(summary, labels=summary.index, autopct='%1.1f%%')
             ax.set_title("By Category")
 
