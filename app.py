@@ -137,7 +137,7 @@ elif menu == 'View Summary':
 
             fig, ax = plt.subplots(facecolor='none')
             ax.set_facecolor('none')
-            ax.pie(summary, labels=summary.index, autopct='%1.1f%%')
+            ax.pie(summary, labels=summary.index, autopct='%1.1f%%', startangle=90, textprops={'color': 'white'})
             ax.set_title("By Category")
 
             st.pyplot(fig)
@@ -147,7 +147,8 @@ elif menu == 'View Summary':
             monthly = df.groupby(df['date'].dt.strftime('%B %Y'))['amount'].sum()
 
             fig, ax = plt.subplots()
-            ax.pie(monthly, labels=monthly.index, autopct='%1.1f%%')
+            ax.set_facecolor('none')
+            ax.pie(summary, labels=summary.index, autopct='%1.1f%%', startangle=90, textprops={'color': 'white'})
             ax.set_title("By Month")
 
             st.pyplot(fig)
