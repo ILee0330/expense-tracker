@@ -254,20 +254,20 @@ elif menu == "Edit Expense":
         st.info("No expenses to edit.")
 
     else:
+        else:
         options = {
-    f"{row['date']} | {row['category']} | ${row['amount']}": row['id']
-    for _, row in df.iterrows()
-}
+            f"{row['date']} | {row['category']} | ${row['amount']}": row['id']
+            for _, row in df.iterrows()
+        }
 
-selected = st.selectbox(
-    "Select Expense",
-    list(options.keys())
-)
+        selected = st.selectbox(
+            "Select Expense",
+            list(options.keys())
+        )
 
-expense_id = options[selected]
-    
+        expense_id = options[selected]
 
-    row = df[df["id"] == expense_id].iloc[0]
+        row = df[df["id"] == expense_id].iloc[0]
 
         new_date = st.text_input("Date", str(row["date"]))
         new_cat = st.text_input("Category", row["category"])
