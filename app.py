@@ -5,7 +5,12 @@ import sqlite3
 import hashlib
 
 # =========================
-# DATABASE SETUP (MUST BE FIRST)
+# PAGE CONFIG (MUST BE FIRST STREAMLIT CALL)
+# =========================
+st.set_page_config(page_title="Personal Expense Tracker", layout="centered")
+
+# =========================
+# DATABASE SETUP
 # =========================
 conn = sqlite3.connect("expenses.db", check_same_thread=False)
 c = conn.cursor()
@@ -31,7 +36,6 @@ CREATE TABLE IF NOT EXISTS expenses (
 
 conn.commit()
 
-
 # =========================
 # SESSION STATE
 # =========================
@@ -45,7 +49,6 @@ if "user_id" not in st.session_state:
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-
 # =========================
 # LOGIN SYSTEM
 # =========================
@@ -55,7 +58,6 @@ if st.session_state.user is None:
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
-    # -------- REGISTER --------
     with tab2:
         new_user = st.text_input("New Username")
         new_pass = st.text_input("New Password", type="password")
@@ -71,7 +73,6 @@ if st.session_state.user is None:
             except:
                 st.error("Username already exists")
 
-    # -------- LOGIN --------
     with tab1:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -87,13 +88,11 @@ if st.session_state.user is None:
             if user:
                 st.session_state.user = user[1]
                 st.session_state.user_id = user[0]
-                st.success("Logged in!")
                 st.rerun()
             else:
                 st.error("Invalid login")
 
     st.stop()
-
 
 # =========================
 # LOGOUT
@@ -105,16 +104,10 @@ if st.sidebar.button("Logout"):
     st.session_state.user_id = None
     st.rerun()
 
-
-# =========================
-# APP UI
-# =========================
-st.set_page_config(page_title="Personal Expense Tracker", layout="centered")
 st.title("💰 Personal Expense Tracker")
 
-
 # =========================
-# HELPER FUNCTIONS (USER-SPECIFIC)
+# HELPER FUNCTIONS
 # =========================
 def load_data():
     return pd.read_sql_query(
@@ -123,14 +116,12 @@ def load_data():
         params=(st.session_state.user_id,)
     )
 
-
 def add_expense(date, category, description, amount):
     c.execute(
         "INSERT INTO expenses (user_id, date, category, description, amount) VALUES (?, ?, ?, ?, ?)",
         (st.session_state.user_id, date, category, description, amount)
     )
     conn.commit()
-
 
 def update_expense(expense_id, date, category, description, amount):
     c.execute("""
@@ -140,7 +131,6 @@ def update_expense(expense_id, date, category, description, amount):
     """, (date, category, description, amount, expense_id, st.session_state.user_id))
     conn.commit()
 
-
 def delete_expense(expense_id):
     c.execute(
         "DELETE FROM expenses WHERE id=? AND user_id=?",
@@ -148,142 +138,103 @@ def delete_expense(expense_id):
     )
     conn.commit()
 
-
+# =========================
+# LOAD DATA
+# =========================
 df = load_data()
 
-
 # =========================
-# SIDEBAR MENU
+# SIDEBAR
 # =========================
 menu = st.sidebar.radio(
     "Navigation",
     ['Dashboard', 'Add Expense', 'View Expense', 'Edit Expense', 'Delete Expense']
 )
 
-
 # =========================
 # DASHBOARD
 # =========================
 if menu == "Dashboard":
 
-    st.header("📊 Financial Dashboard")
-
-    df = load_data()
-
     if df.empty:
         st.info("No expenses recorded yet.")
     else:
 
-        overall_total = df['amount'].sum()
+        total = df['amount'].sum()
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric("💰 Total Expenses", f"${overall_total:,.2f}")
-
+            st.metric("Total", f"${total:,.2f}")
         with col2:
-            st.metric("🧾 Transactions", len(df))
-
+            st.metric("Transactions", len(df))
         with col3:
-            avg = overall_total / len(df)
-            st.metric("📈 Avg Expense", f"${avg:,.2f}")
+            st.metric("Average", f"${total/len(df):,.2f}")
 
         st.divider()
 
         left, right = st.columns(2)
 
-        # CATEGORY PIE
         with left:
-            category_summary = df.groupby('category')['amount'].sum()
+            cat = df.groupby('category')['amount'].sum()
 
             fig, ax = plt.subplots(facecolor='#0E1117')
             ax.set_facecolor('#0E1117')
-
-            ax.pie(
-                category_summary,
-                labels=category_summary.index,
-                autopct='%1.1f%%',
-                startangle=90,
-                textprops={'color': 'white'}
-            )
-
+            ax.pie(cat, labels=cat.index, autopct='%1.1f%%',
+                   textprops={'color': 'white'})
             ax.set_title("Categories", color="white")
-
             st.pyplot(fig)
 
-        # MONTHLY PIE
         with right:
             df['date'] = pd.to_datetime(df['date'])
-
-            monthly_summary = df.groupby(df['date'].dt.strftime('%B %Y'))['amount'].sum()
+            month = df.groupby(df['date'].dt.strftime('%B %Y'))['amount'].sum()
 
             fig, ax = plt.subplots(facecolor='#0E1117')
             ax.set_facecolor('#0E1117')
-
-            ax.pie(
-                monthly_summary,
-                labels=monthly_summary.index,
-                autopct='%1.1f%%',
-                startangle=90,
-                textprops={'color': 'white'}
-            )
-
-            ax.set_title("Monthly Spending", color="white")
-
+            ax.pie(month, labels=month.index, autopct='%1.1f%%',
+                   textprops={'color': 'white'})
+            ax.set_title("Monthly", color="white")
             st.pyplot(fig)
 
-        st.divider()
-        st.subheader("Recent Transactions")
+        st.subheader("Recent")
         st.dataframe(df.tail(10))
 
-
 # =========================
-# ADD EXPENSE
+# ADD
 # =========================
 elif menu == "Add Expense":
 
     st.header("Add Expense")
 
-    with st.form("expense_form", clear_on_submit=True):
+    with st.form("form", clear_on_submit=True):
         date = st.date_input("Date")
-        category = st.text_input("Category")
-        description = st.text_input("Description")
-        amount_input = st.text_input("Amount")
+        cat = st.text_input("Category")
+        desc = st.text_input("Description")
+        amt = st.text_input("Amount")
 
-        submitted = st.form_submit_button("Submit")
-
-        if submitted:
+        if st.form_submit_button("Submit"):
             try:
-                amount = float(amount_input)
-                add_expense(str(date), category, description, amount)
-                st.success("Expense added!")
+                add_expense(str(date), cat, desc, float(amt))
+                st.success("Added!")
             except:
                 st.error("Invalid amount")
 
-
 # =========================
-# VIEW EXPENSES
+# VIEW
 # =========================
 elif menu == "View Expense":
-
     st.header("View Expenses")
-
-    df = load_data()
-
     st.dataframe(df.drop(columns=["id", "user_id"]))
 
-
 # =========================
-# EDIT EXPENSE
+# EDIT (FIXED)
 # =========================
 elif menu == "Edit Expense":
 
     st.header("Edit Expense")
 
-    df = load_data()
-
     options = df.apply(
-        lambda row: f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}",
+        lambda r: f"{r['id']} | {r['date']} | {r['category']} | ${r['amount']}",
         axis=1
     )
 
@@ -292,28 +243,30 @@ elif menu == "Edit Expense":
 
     row = df[df['id'] == expense_id].iloc[0]
 
+    new_date = st.text_input("Date", row['date'])
+    new_cat = st.text_input("Category", row['category'])
+    new_desc = st.text_input("Description", row['description'])
+    new_amt = st.text_input("Amount", str(row['amount']))
+
     if st.button("Save Changes"):
         update_expense(
             expense_id,
-            row['date'],
-            row['category'],
-            row['description'],
-            row['amount']
+            new_date,
+            new_cat,
+            new_desc,
+            float(new_amt)
         )
         st.success("Updated!")
 
-
 # =========================
-# DELETE EXPENSE
+# DELETE
 # =========================
 elif menu == "Delete Expense":
 
     st.header("Delete Expense")
 
-    df = load_data()
-
     options = df.apply(
-        lambda row: f"{row['id']} | {row['date']} | {row['category']} | ${row['amount']}",
+        lambda r: f"{r['id']} | {r['date']} | {r['category']} | ${r['amount']}",
         axis=1
     )
 
