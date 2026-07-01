@@ -2,15 +2,78 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
-
-st.set_page_config(page_title="Personal Expense Tracker", layout="centered")
-st.title("💰 Personal Expense Tracker")
-
+import hashlib
 # =========================
-# DATABASE SETUP
+# LOGIN SYSTEM
+# =========================
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+# -------------------------
+# LOGIN SCREEN (BLOCK APP)
+# -------------------------
+if st.session_state.user is None:
+
+    st.title("🔐 Login System")
+
+    tab1, tab2 = st.tabs(["Login", "Register"])
+
+    # -------- REGISTER --------
+    with tab2:
+        new_user = st.text_input("New Username")
+        new_pass = st.text_input("New Password", type="password")
+
+        if st.button("Create Account"):
+            try:
+                c.execute(
+                    "INSERT INTO users (username, password) VALUES (?, ?)",
+                    (new_user, hash_password(new_pass))
+                )
+                conn.commit()
+                st.success("Account created!")
+            except:
+                st.error("Username already exists")
+
+    # -------- LOGIN --------
+    with tab1:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Login"):
+            c.execute(
+                "SELECT * FROM users WHERE username=? AND password=?",
+                (username, hash_password(password))
+            )
+
+            user = c.fetchone()
+
+            if user:
+                st.session_state.user = username
+                st.success("Logged in!")
+                st.rerun()
+            else:
+                st.error("Invalid login")
+
+    st.stop()
+# =========================
+# DATABASE SETUP (FIXED ORDER)
 # =========================
 conn = sqlite3.connect("expenses.db", check_same_thread=False)
 c = conn.cursor()
+
+c.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT
+)
+""")
 
 c.execute("""
 CREATE TABLE IF NOT EXISTS expenses (
@@ -21,7 +84,14 @@ CREATE TABLE IF NOT EXISTS expenses (
     amount REAL
 )
 """)
+
 conn.commit()
+
+# =========================
+# APP UI
+# =========================
+st.set_page_config(page_title="Personal Expense Tracker", layout="centered")
+st.title("💰 Personal Expense Tracker")
 
 
 # =========================
@@ -59,6 +129,7 @@ df = load_data()
 # =========================
 # SIDEBAR MENU
 # =========================
+
 menu = st.sidebar.radio(
     "Navigation",
     ['Dashboard', 'Add Expense', 'View Expense', 'Edit Expense', 'Delete Expense']
