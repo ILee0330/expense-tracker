@@ -3,7 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
 import hashlib
+import os
 
+st.write("Database location:", os.path.abspath("expenses.db"))
 # =========================
 # PAGE CONFIG (MUST BE FIRST STREAMLIT CALL)
 # =========================
@@ -33,12 +35,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     amount REAL
 )
 """)
-if st.sidebar.checkbox("View Users"):
-    users = pd.read_sql_query(
-        "SELECT id, username, password FROM users",
-        conn
-    )
-    st.dataframe(users)
+
 conn.commit()
 # Add user_id column if database was created before login system
 try:
