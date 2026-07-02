@@ -3,9 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sqlite3
 import hashlib
-import os
 
-st.write("Database location:", os.path.abspath("expenses.db"))
 # =========================
 # PAGE CONFIG (MUST BE FIRST STREAMLIT CALL)
 # =========================
