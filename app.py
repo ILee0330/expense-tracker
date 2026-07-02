@@ -33,7 +33,12 @@ CREATE TABLE IF NOT EXISTS expenses (
     amount REAL
 )
 """)
-
+if st.sidebar.checkbox("View Users"):
+    users = pd.read_sql_query(
+        "SELECT id, username, password FROM users",
+        conn
+    )
+    st.dataframe(users)
 conn.commit()
 # Add user_id column if database was created before login system
 try:
